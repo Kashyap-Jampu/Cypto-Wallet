@@ -17,4 +17,4 @@ class User(AbstractUser):
 
 class Blockchain(models.Model):
     totalblockchain=models.TextField(blank=True)
-    
+    open_transactions=models.TextField(blank=True)

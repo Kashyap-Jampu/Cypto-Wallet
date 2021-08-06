@@ -3,10 +3,13 @@ import binascii
 from django.contrib.auth import authenticate,login,logout
 from Crypto.PublicKey import RSA
 import Crypto.Random
+from Crypto.Hash import SHA256
+from utility.transaction import Transaction
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import User
+from .models import User,Blockchain
 from django.http import JsonResponse
+from utility.blockchain import Blockchainn
 # Create your views here.
 def home(request):
     return render(request,"home.html")
@@ -69,8 +72,23 @@ def logout_view(request):
 
 
 
-@login_view
-def get_balance(request,pk):
-    user=User.objects.get(id=pk)
+@login_required
+def add_transaction(request):
+    if request.method=="POST":
 
-    return JsonResponse()
+        recevier=request.POST["recevier"]
+        sender=request.user
+        receiver=User.objects.get(id=receiver).public_key
+        blockchain=Blockchainn(sender.private_key)
+        amount=int(request.POST["amount"])
+        signer = PKCS1_v1_5.new(RSA.importKey(
+            binascii.unhexlify(sender.private_key)))
+        h = SHA256.new((str(sender) + str(recipient) +
+                        str(amount)).encode('utf8'))
+        signature = signer.sign(h)
+        sign= binascii.hexlify(signature).decode('ascii')
+        if blockchain.add_transaction(sender.public_key,receiver,amount,sign):
+            print("success")
+        else:
+            print("failure")
+    return render(request,"add_tx.html")
