@@ -1,6 +1,33 @@
+
+from Crypto.Signature import PKCS1_v1_5
+from Crypto.PublicKey import RSA
+import binascii
+import Crypto.Random
+from Crypto.Hash import SHA256
+import json
+import hashlib as hl
 """Provides verification helper methods."""
 
+def hash_string_256(string):
+    """Create a SHA256 hash for a given input string.
 
+    Arguments:
+        :string: The string which should be hashed.
+    """
+    return hl.sha256(string).hexdigest()
+
+
+def hash_block(block):
+    """Hashes a block and returns a string representation of it.
+
+    Arguments:
+        :block: The block that should be hashed.
+    """
+    hashable_block = block.__dict__.copy()
+    hashable_block['transactions'] = [
+        tx.to_ordered_dict() for tx in hashable_block['transactions']
+    ]
+    return hash_string_256(json.dumps(hashable_block, sort_keys=True).encode())
 
 class Verification:
     """A helper class which offer various static and class-based verification
@@ -54,7 +81,8 @@ class Verification:
         verifier = PKCS1_v1_5.new(public_key)
         h = SHA256.new((str(transaction.sender) + str(transaction.recipient) +
                         str(transaction.amount)).encode('utf8'))
-        return verifier.verify(h, binascii.unhexlify(transaction.signature))
+        print(verifier.verify(h,str(binascii.unhexlify(transaction.sign))))
+        return verifier.verify(h, binascii.unhexlify(transaction.sign))
 
     @classmethod
     def verify_transactions(cls, open_transactions, get_balance):

@@ -5,10 +5,20 @@
     <title></title>
   </head>
   <body>
-    <form  method="post">
-
-      amount-<input type="number">
-      receiver- <input type="number" >
+    <form  method="post">{%csrf_token%}
+      <p>Ur balance {{balance}}</p>
+      <label for="u">Recipient</label>
+      <select name="user_id" id="u">
+        {% for user in users %}
+        <option value="{{user.id}}">{{user.username}}</option>
+        {% endfor %}
+      </select>
+      <label for="">Amount</label>
+      <input type="number" name="amount">
+      
+      <input type="submit">
     </form>
+    <button href="{% url 'mine' %}">Mine</button>
+    
   </body>
 </html>

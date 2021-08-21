@@ -3,8 +3,14 @@ import hashlib as hl
 import json
 from utility.verification import Verification
 from utility.transaction import Transaction
+from accounts_app.models import *
+from Crypto.Signature import PKCS1_v1_5
+from Crypto.PublicKey import RSA
+import binascii
+import Crypto.Random
+from Crypto.Hash import SHA256
 
-
+MINING_REWARD=2
 
 def hash_string_256(string):
     """Create a SHA256 hash for a given input string.
@@ -41,12 +47,12 @@ class Blockchainn():
         self.load_data()
 
     def load_data(self):
-        block_chain=Blockchain.objects.get().totalblockchain
+        block_chain=Blockchain.objects.get(id=3).totalblockchain
         if block_chain=="":
             block_chain=[]
         else:
-            block_chain = json.loads(blockchain)
-        op_tx=Blockchain.objects.get().open_transactions
+            block_chain = json.loads(block_chain)
+        op_tx=Blockchain.objects.get(id=3).open_transactions
         if op_tx=="":
             op_tx=[]
         else:
@@ -54,21 +60,24 @@ class Blockchainn():
         for block in block_chain:
             converted_tx=[]
             for tx in block['transactions']:
-                 converted_tx.append(Transaction(tx['sender'],tx['recipient'],tx['signature'],tx['amount']) )
+                 converted_tx.append(Transaction(tx['sender'],tx['recipient'],tx['amount'],tx['sign']) )
 
 
             updated_block = Block(block['index'],block['previous_hash'],converted_tx,block['proof'],block['timestamp'])
+
             self.blockchain.append(updated_block)
+        if not block_chain==[]:
+           self.blockchain.pop(0)
         converted_tx=[]
         for tx in op_tx:
-             converted_tx.append(Transaction(tx['sender'],tx['recipient'],tx['signature'],tx['amount']) )
+             converted_tx.append(Transaction(tx['sender'],tx['recipient'],tx['amount'],tx['sign']) )
         self.opentransactions=converted_tx[:]
 
     def save_data(self):
         saveable_chain=[]
         for block in self.blockchain:
             tx_arr=[]
-            for tx in block.transaction:
+            for tx in block.transactions:
                 tx_arr.append(tx.__dict__)
             saveable_chain.append(Block(block.index,block.previous_hash,tx_arr,block.proof,block.timestamp).__dict__)
 
@@ -81,8 +90,9 @@ class Blockchainn():
         op_tx=json.dumps(saveable_tx)
 
 
-
-        block_chain_2=Blockchain(totalblockchain=block_chain,open_transaction=op_tx)
+        block_chain_2=Blockchain.objects.get(id=3)
+        block_chain_2.totalblockchain=block_chain
+        block_chain_2.open_transactions=op_tx
         block_chain_2.save()
         return True
 
@@ -90,17 +100,17 @@ class Blockchainn():
 
 
 
-    def add_transaction(self,sender,recevier,amount,sign):
+    def add_transaction(self,sender,receiver,amount,sign):
 
-        transaction=Transaction(sender,recipient,amount,sign)
-        if get_balance(sender)<amount:
+        transaction=Transaction(sender,receiver,amount,sign)
+        if self.get_balance(sender)<amount:
             print("insuff balance")
             return False
         else:
             public_key = RSA.importKey(binascii.unhexlify(transaction.sender))
             verifier = PKCS1_v1_5.new(self.public_key)
 
-            self.opentransations.append(transation)
+            self.opentransactions.append(transaction)
             if self.save_data():
                 return True
             else:
@@ -109,24 +119,25 @@ class Blockchainn():
     def get_balance(self,sender):
         balance=0
         for block in self.blockchain:
-            for transation in block.transactions:
-                if transaction.receiver==sender:
-                    balance+=transation.amount
+            for transaction in block.transactions:
+                if transaction.recipient==sender:
+                    balance+=transaction.amount
                 elif transaction.sender==sender:
-                    balance=-transaction.amount
+                    balance-=transaction.amount
         for transaction in self.opentransactions:
                 if transaction.sender==sender:
-                    balance=-transaction.amount
+                    balance-=transaction.amount
+
         print(balance)
         return balance
     def mine(self):
-        if len(self.opentransations)==0:
+        if len(self.opentransactions)==0:
             return
         last_block=self.blockchain[-1]
         hashed_block=hash_block(last_block)
         proof=self.proof_of_work(hashed_block)
         reward_transaction = Transaction(
-            'MINING', self.public_key, '', MINING_REWARD)
+            'MINING', self.public_key,MINING_REWARD,'' )
         copied_transactions = self.opentransactions[:]
         verification=Verification()
         for tx in copied_transactions:
