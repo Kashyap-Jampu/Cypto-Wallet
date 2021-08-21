@@ -100,6 +100,7 @@ def add_transaction(request):
             print("success")
         else:
             print("failure")
+
     bc=Blockchainn(request.user.public_key)
     users=User.objects.all()
     balance=bc.get_balance(request.user.public_key)
@@ -117,3 +118,7 @@ def mine_view(request):
 
     return redirect("add_transaction")    
     
+
+    return render(request,"add_tx.html")
+#hello workllpjplirsoibozjfbvbdbfdi
+ 
